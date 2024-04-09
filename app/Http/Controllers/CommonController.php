@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attributes_Product;
 use App\Models\Category;
 use App\Models\Checkout;
+use App\Models\Wallet;
 use App\Models\Product;
 use App\Models\User;
 use Mail;
@@ -123,13 +124,6 @@ class CommonController extends Controller
         }
         $vendor_id = Auth::user()->id;
         $vendor_order['order'] = Checkout::where('vendor_id', $vendor_id)->get();
-        $orderdata = Checkout::where('vendor_id', $vendor_id)->get();
-        $orderlabel_arr = [];
-        foreach($orderdata as $key => $value){
-            $id = !empty($value->shipment_id) ? $value->shipment_id : 0;
-            $orderlabel_arr[$value->id] =    $this->genrateshiprocketorderlable($id); 
-        }
-        $vendor_order['label_data'] = $orderlabel_arr;
         return view('admin/vendor/pages/order', $vendor_order);
     }
     
@@ -300,7 +294,7 @@ class CommonController extends Controller
         $data['surl'] = '/success';
         $data['furl'] = '/failed';
         $data['name'] = $invoices[0]->username;
-        $data['totalamount'] = $invoices->sum('grand_total');
+        $data['totalamount'] = $invoices[0]->grand_total;
         $data['product'] = Checkout::where('rand', $rand_id)->get()->firstOrFail();
         // echo "<pre>";//print_r($invoices);
         // print_r($data);exit;
@@ -332,13 +326,36 @@ class CommonController extends Controller
         if (Auth::check()) {
 
             $cart_data = Cart::getContent();
+            if(count($cart_data)<1){
+                return redirect('/');
+                die;
+            }
             foreach ($cart_data as $cart_d) {
                 $productt['productt'] = Product::where('id', $cart_d->id)->first();
                 $vendor_id = $productt['productt']->vendor_id;
                 $product_weight = $productt['productt']->weight;
                 $vendor_idd['vendor_idd'] = User::where('id', $vendor_id)->first();
             }
+            
+            $user_id = Auth::user()->id;
+            $data['wallet'] = Wallet::where('user_id', $user_id)->get();
 
+            $total = 0;        
+            foreach ($data['wallet'] as $key => $val){
+                if($val->rand == $val->rand){
+                    if($val->trans_type == '+'){
+                        $total += $val->credit;
+                    }else{
+                        $total -= $val->debit;
+                    }
+                }
+            }
+            // echo "<pre>";
+            // print_r($data['wallet']);
+            // echo $total;exit;
+            $data['wallet_total'] = $wallet_total =  $total;
+            $data['user_id'] = $user_id;
+            
             $vendor_pin_code = $vendor_idd['vendor_idd']->pin_code;
             $cart_product['cart_product'] = Product::where('id', $cart_d->id)->get();
             $vendor_idi = $cart_product['cart_product']['0']->vendor_id;
@@ -348,43 +365,77 @@ class CommonController extends Controller
             $cod = '0';
             $weight = $product_weight;
 
-            // $ch = curl_init();
-            // curl_setopt($ch, CURLOPT_URL, 'https://apiv2.shiprocket.in/v1/external/auth/login');
-            // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-            // curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            //     'Content-Type: application/json',
-            // ]);
-            // curl_setopt($ch, CURLOPT_POSTFIELDS, "{\n    \"email\": \"amaronshop.ind@gmail.com\",\n    \"password\": \"Ns@9929532877#\"\n}");
-            // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            // $response = curl_exec($ch);
-            // curl_close($ch);
-            // $data_token = json_decode($response, true);
-            // $token = $data_token['token'];
+            {
+                // $ch = curl_init();
+                // curl_setopt($ch, CURLOPT_URL, 'https://apiv2.shiprocket.in/v1/external/auth/login');
+                // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+                // curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                //     'Content-Type: application/json',
+                // ]);
+                // curl_setopt($ch, CURLOPT_POSTFIELDS, "{\n    \"email\": \"amaronshop.ind@gmail.com\",\n    \"password\": \"Ns@9929532877#\"\n}");
+                // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                // $response = curl_exec($ch);
+                // curl_close($ch);
+                // $data_token = json_decode($response, true);
+                // $token = $data_token['token'];
 
-            // $ch = curl_init();
-            // curl_setopt($ch, CURLOPT_URL, "https://apiv2.shiprocket.in/v1/external/courier/serviceability/?pickup_postcode=".$pickup_postcode."&delivery_postcode=".$delivery_postcode."&cod=0&weight=".$weight."");
-            // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-            // curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            //     'Content-Type: application/json',
-            //     'Authorization: Bearer'.$token,
-            // ]);
-            // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            // $response = curl_exec($ch);
-            // curl_close($ch);
-            // $dataaa = json_decode($response, true);
+                // $ch = curl_init();
+                // curl_setopt($ch, CURLOPT_URL, "https://apiv2.shiprocket.in/v1/external/courier/serviceability/?pickup_postcode=".$pickup_postcode."&delivery_postcode=".$delivery_postcode."&cod=0&weight=".$weight."");
+                // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+                // curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                //     'Content-Type: application/json',
+                //     'Authorization: Bearer'.$token,
+                // ]);
+                // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                // $response = curl_exec($ch);
+                // curl_close($ch);
+                // $dataaa = json_decode($response, true);
 
-            // $data['rate'] = $dataaa['data']['available_courier_companies']['0']['rto_charges'];
-            // $data['data_edd'] = $dataaa['data']['available_courier_companies']['0']['etd'];
+                // $data['rate'] = $dataaa['data']['available_courier_companies']['0']['rto_charges'];
+                // $data['data_edd'] = $dataaa['data']['available_courier_companies']['0']['etd'];
 
-            // $shipping_rate = $dataaa['data']['available_courier_companies']['0']['rate'];
-            // $edd = $dataaa['data']['available_courier_companies']['0']['etd'];
+                // $shipping_rate = $dataaa['data']['available_courier_companies']['0']['rate'];
+                // $edd = $dataaa['data']['available_courier_companies']['0']['etd'];
+            }
 
             if ($req->method() == 'POST') {
+                if(isset($req->use_wallet)){
+                    if ($req->payment_method == 'cod') {
+                        $total = Cart::getSubTotal()+25;
+
+                    }else{
+                        $total = Cart::getSubTotal();
+                    }
+                    $wallet_total_old = $wallet_total;
+                    $total_payable = $total;
+                    if(isset($_GET['use_wallet'])){
+                        if($wallet_total < $total){
+                            $total_payable = $total - $wallet_total;
+                            // $wallet_total = 0;
+                        }
+                        else{
+                            $total_payable = 0;
+                            // $wallet_total_old = $total;
+                            // $wallet_total = $wallet_total - $total;
+                            $wallet_total = $total;
+                        }
+                    }
+                }else{
+                    $total_payable = Cart::getSubTotal();
+                }
+                // echo "<pre>";
+                // print_r($wallet_total);
+                // print_r($total_payable);
+                // print_r($req->all());
+                // print_r(count(Cart::getContent()));
+                // exit;
                 $rand = random_int(100000, 999999);
                 $data = '';
+                $refer_comm = 0;
                 foreach (Cart::getContent() as $val) {
+                    
                     $data_checkout = [
                         'c_id' => '1',
                         'rand' => $rand,
@@ -395,20 +446,64 @@ class CommonController extends Controller
                         'email' => $req->email,
                         'mobile' => $req->mobile,
                         'pin_code' => $req->pin_code,
-                        'shipment_id' => 0,
                         'city' => $req->city,
                         'address' => $req->address,
                         'data' => $val,
                         'vendor_id' => Product::where('id', $val['id'])->first()->vendor_id,
                         'user_id' => Auth::user()->id,
-                        'order_total' => $val['price'] ?? 0,
-                        'grand_total' => Cart::get($val['id'])->getPriceSum(),
+                        'wallet_used' => $wallet_total,
+                        'order_total' => Cart::get($val['id'])->getPriceSum(),
+                        'grand_total' => $total_payable,
+                        // 'order_total' => $val['price'] ?? 0,
+                        // 'grand_total' => Cart::get($val['id'])->getPriceSum(),
                         'payment_mode' => $req->payment_method,
                         'payment_status' => 'N',
                     ];
                     $data = Checkout::create($data_checkout);
+                    // echo "<pre>";
+                    // print_r($val);
+                    // echo "</pre>";
+
+                    $prduct = Product::where('id', $val->id)->first();
+                    // print_r($prduct->product_sale_price);
+                    $refer_comm += ($val->quantity*$prduct->product_sale_price)/100*1;
                     $url = $data->rand;
                 }
+                // echo "<pre>";
+                // print_r(Auth::user());
+                $referred_by = User::where('referral', Auth::user()->referred_by)->first('id');
+                // print_r($referred_by->id);
+                // print_r($refer_comm);
+                // echo "</pre>";
+
+                if(isset($referred_by->id)){
+                    // echo "test";
+                    $wallet_ins = [
+                        'user_id'=>$referred_by->id,
+                        'reference'=>"Product commision by ".Auth::user()->referral."!",
+                        // 'debit'=>$wallet_total,
+                        'credit'=>$refer_comm,
+                        'trans_type'=>'+',//$req->trans_type,
+                    ];
+                    // print_r($wallet_ins);exit;
+                    $data1 = Wallet::create($wallet_ins);
+                }
+// exit;
+                if($wallet_total>0){
+                    $wallet_ins = [
+                        'user_id'=>Auth::user()->id,
+                        'reference'=>"Amount paid for product!",
+                        // 'debit'=>$wallet_total,
+                        'debit'=>$wallet_total,
+                        'trans_type'=>'-',//$req->trans_type,
+                    ];
+                    // print_r($wallet_ins);exit;
+                    $data1 = Wallet::create($wallet_ins);
+                }
+
+
+
+                // exit;
                 if($data){
                     //shiprocket create order process code.
                     $postarray = array();
@@ -425,11 +520,13 @@ class CommonController extends Controller
                             "discount" => "",
                             "tax" => "",
                             "hsn" => "",
-                        );     
+                        ); 
+                        // echo "<pre>";
+                        // print_r($shipitemsarr);exit;    
                     //}
                     $postrequestdata = $req->all();
                     $orderpostarr = [
-                        "order_id" => $data->id,
+                        "order_id" => $shipplacearr['rand'],
                         "order_date" => $shipplacearr['created_at'],
                         "pickup_location" => "primary",
                         "channel_id" => "3853310",
@@ -473,17 +570,19 @@ class CommonController extends Controller
                     // echo '<pre>';
                     // print_r($orderpostarr);
                     // echo '</pre>';
-                    // print_r($data->id);
+                    // dd($shiprocketorderstatus);
                     if($shiprocketorderstatus->status_code == 1){
                         $shiporderid = $shiprocketorderstatus->order_id;
                         $channel_order_id = $shiprocketorderstatus->channel_order_id;
                         $shipment_id = $shiprocketorderstatus->shipment_id;
-                        $tty = Checkout::where('id', $data->id)->update(['shipment_id' => $shipment_id]);
                     }
-                    //print_r($this->shipRocketAccessToken());
-                    //dd($shiprocketorderstatus);
                 }
                 if ($req->payment_method == 'razarpay') {
+                    if (isset($req->use_wallet)) {
+                        return redirect('pay/' . $url.'?use_wallet=1');
+                    }else{
+                        return redirect('pay/' . $url);
+                    }
                     return redirect('pay/' . $url);
                     die;
                 }elseif ($req->payment_method == 'phonepay') {
@@ -706,6 +805,18 @@ class CommonController extends Controller
         }
 
     }
+    public function my_wallet(Request $req)
+    {
+        if (Auth::user()) {
+            $user_id = Auth::user()->id;
+            $user_order['wallet'] = Wallet::where('user_id', $user_id)->get();
+            return view('frant.user.wallet', $user_order);
+
+        } else {
+            return redirect('/login')->with('error', 'Please Login ');
+        }
+
+    }
 
     public function invoice(Request $req, $id)
     {
@@ -846,8 +957,7 @@ class CommonController extends Controller
     public function term_conditions(Request $req)
     {
         $title['title'] = "Term and Conditions";
-        //dd($this->sendOrderOnShiprocket());
-        //dd($this->genrateshiprocketorderlable());
+dd($this->sendOrderOnShiprocket());
         return view('frant.common.term_conditions', $title);
     }
 
@@ -865,31 +975,6 @@ class CommonController extends Controller
     public function track_order(Request $req)
     {
         $title['title'] = "Track My Order";
-        // if(isset($_GET['orderid']) && !empty($_GET['orderid'])){
-        //     $shipmetndtrackinginfo = $this->gettrackingdetailsbyorderid($_GET['orderid']);
-        //     if(!empty($shipmetndtrackinginfo)){
-        //         $title['shipmetndtrackinginfo'] = $shipmetndtrackinginfo; 
-        //     }
-            
-        // }
-        return view('frant.common.track_order', $title);
-    }
-    
-    public function track_shipment(Request $req, $order_id)
-    {
-        $title['title'] = "Track My Order";
-        if(!empty($order_id)){
-            $shipmetndtrackinginfo = $this->gettrackingdetailsbyorderid($order_id);
-            if(!empty($shipmetndtrackinginfo)){
-                $title['shipmetndtrackinginfo'] = $shipmetndtrackinginfo; 
-            }
-            
-            $checkorderidexist = Checkout::where('id', $order_id)->first();
-            if(!empty($checkorderidexist)){
-                $title['orderid'] = $checkorderidexist;
-            }
-            
-        }
         return view('frant.common.track_order', $title);
     }
     public function datamanage(Request $req)
@@ -984,7 +1069,7 @@ class CommonController extends Controller
         return redirect()->back()->with('success','Updated Successfully');
     }
 
-    public function shipRocketAccessToken(){
+public function shipRocketAccessToken(){
         // $email    = 'rahulgoyal0131@gmail.com';
         // $password = 'XPAsY@U!6Yp7Czq'; 
         $email    = 'amaronshop.ind@gmail.com';
@@ -1006,11 +1091,7 @@ class CommonController extends Controller
         $response = curl_exec($curl);
         $result = json_decode($response);
         curl_close($curl);
-        $token = '';
-        if(isset($result->token)){
-            $token = $result->token;
-        }
-        return $token;
+        return $result->token;
     }
 
     public function sendOrderOnShiprocket($orderpostarr){
@@ -1028,7 +1109,7 @@ class CommonController extends Controller
         CURLOPT_POSTFIELDS =>json_encode($orderpostarr),
         CURLOPT_HTTPHEADER => array(
             'Content-Type: application/json',
-            'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FwaXYyLnNoaXByb2NrZXQuaW4vdjEvZXh0ZXJuYWwvYXV0aC9sb2dpbiIsImlhdCI6MTcxMTk5NTU3NCwiZXhwIjoxNzEyODU5NTc0LCJuYmYiOjE3MTE5OTU1NzQsImp0aSI6IjBZQUlTUFZuUnVUa0RnbzIiLCJzdWIiOjM1NTg5NDgsInBydiI6IjA1YmI2NjBmNjdjYWM3NDVmN2IzZGExZWVmMTk3MTk1YTIxMWU2ZDkiLCJjaWQiOjM0NjYzNTJ9.GM-UE8sXR-o8cX0biHOnFwv3th49G2yrW6HhSH20iKI'
+            'Authorization: Bearer '.$accessToken
         ),
         ));
         $response = curl_exec($curl);
@@ -1136,71 +1217,5 @@ class CommonController extends Controller
     }
 
     // Common Pages End
-    
-    // labal geanrate for shiprocket..
-    public function genrateshiprocketorderlable($shipmentid){
-        //$shipmentid = 366490522; //currently used static id 
-        $shiprocketidarra = array('shipment_id'=>array($shipmentid));
-        $accessToken = $this->shipRocketAccessToken();
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://apiv2.shiprocket.in/v1/external/courier/generate/label',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'POST',
-        CURLOPT_POSTFIELDS =>json_encode($shiprocketidarra),
-        CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json',
-            //'Authorization: Bearer '.$accessToken
-            'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FwaXYyLnNoaXByb2NrZXQuaW4vdjEvZXh0ZXJuYWwvYXV0aC9sb2dpbiIsImlhdCI6MTcxMTk5NTU3NCwiZXhwIjoxNzEyODU5NTc0LCJuYmYiOjE3MTE5OTU1NzQsImp0aSI6IjBZQUlTUFZuUnVUa0RnbzIiLCJzdWIiOjM1NTg5NDgsInBydiI6IjA1YmI2NjBmNjdjYWM3NDVmN2IzZGExZWVmMTk3MTk1YTIxMWU2ZDkiLCJjaWQiOjM0NjYzNTJ9.GM-UE8sXR-o8cX0biHOnFwv3th49G2yrW6HhSH20iKI'
-
-        ),
-        ));
-        $response = curl_exec($curl);
-        curl_close($curl);
-        $response = json_decode($response);
-        $printlableurl = '';
-        if(isset($response->label_created) && $response->label_created == 1){
-            $printlableurl = $response->label_url;         
-        }
-        return $printlableurl;
-        
-    }
-    
-    // get Tracking Details by order id
-    public function gettrackingdetailsbyorderid($shipmentid){
-        
-        //$shipmentid = 2590820092; //currently used static id 
-        $shiprocketidarra = array('shipment_id'=>array($shipmentid));
-        $channelid = 3853310;
-        //$accessToken = '';
-        //if(isset($this->shipRocketAccessToken())){
-            $accessToken = $this->shipRocketAccessToken();   
-        //}
-        $curl = curl_init();
-        curl_setopt_array($curl, array(
-        CURLOPT_URL => 'https://apiv2.shiprocket.in/v1/external/courier/track?order_id='.$shipmentid.'&channel_id='.$channelid.'',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_ENCODING => '',
-        CURLOPT_MAXREDIRS => 10,
-        CURLOPT_TIMEOUT => 0,
-        CURLOPT_FOLLOWLOCATION => true,
-        CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-        CURLOPT_CUSTOMREQUEST => 'GET',
-        CURLOPT_HTTPHEADER => array(
-            'Content-Type: application/json',
-            //'Authorization: Bearer '.$accessToken
-            'Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FwaXYyLnNoaXByb2NrZXQuaW4vdjEvZXh0ZXJuYWwvYXV0aC9sb2dpbiIsImlhdCI6MTcxMTk5NTU3NCwiZXhwIjoxNzEyODU5NTc0LCJuYmYiOjE3MTE5OTU1NzQsImp0aSI6IjBZQUlTUFZuUnVUa0RnbzIiLCJzdWIiOjM1NTg5NDgsInBydiI6IjA1YmI2NjBmNjdjYWM3NDVmN2IzZGExZWVmMTk3MTk1YTIxMWU2ZDkiLCJjaWQiOjM0NjYzNTJ9.GM-UE8sXR-o8cX0biHOnFwv3th49G2yrW6HhSH20iKI'
-        ),
-        ));
-        $response = curl_exec($curl);
-        curl_close($curl);
-        return json_decode($response);
-        
-    }
 
 }

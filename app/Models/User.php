@@ -39,6 +39,7 @@ class User extends Authenticatable
         'aadhaar_front',
         'aadhaar_back_side',
         'referral',
+        'referred_by',
 
     ];
 

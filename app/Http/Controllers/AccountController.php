@@ -65,25 +65,38 @@ class AccountController extends Controller
     {
        if(Auth::user()){
         return back();
-       }
+       } 
         if($req->method()=='POST'){
             $req->validate([
                 'name' => 'required',
                 'phone' => 'required|numeric|digits:10|unique:users',
                 'email' => 'required|unique:users|email:rfc,dns',
                 'password' => 'required',
-                'referral' => 'exists:users,id|nullable',
+                // 'referred_by' => 'exists:users,id|nullable',
                 
             ]);
+            // echo ":test". $req->referred_by;exit;
+            $query = User::where('referral', $req->referred_by)->count();
+            // echo "test<pre>";
+            // print_r($query);
+            if ($query == 0){
+                $alert = array(
+                    'ref_message' ,'Wrong referral code passed!');
+                    // 'referred_by' => 'invalid-code');
+                return back()->with($alert);
+            }
+
             $data = [
                 'name'=>$req->name,
                 'email'=>$req->email,
                 'phone'=>$req->phone,
                 'role' => "user",
-                'referral' => $req->referral,
+                'referral' => explode('@',$req->email)[0],
+                'referred_by' => $req->referred_by,
                 'password'=>Hash::make($req->password),
             ];
-
+            // print_r(print_r($data));
+            // exit;
             $data = User::create($data);
             $req->session()->flash('register_user', 'Congratulations, Your Account Has Been Successfully Created.');
            return redirect()->route('login'); 
