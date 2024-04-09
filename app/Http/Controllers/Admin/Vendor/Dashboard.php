@@ -16,7 +16,7 @@ class Dashboard extends Controller
  
     public function referearn(Request $req)
     {
-        $data['data'] = User::where( 'referral' , Auth::id() )->get();
+        $data['data'] = User::where( 'referred_by' , Auth::user()->referral )->get();
         return view('admin.vendor.pages.referearn',$data);
     }
     

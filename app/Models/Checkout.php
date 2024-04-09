@@ -30,5 +30,7 @@ class Checkout extends Model
         'pin_code',
         'city',
         'rand',
+        'order_total',
+        'wallet_used',
     ];
 }
