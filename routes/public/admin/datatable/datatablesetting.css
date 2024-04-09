@@ -1,0 +1,57 @@
+.dt-buttons {
+    float: right;
+    padding-top: 20px;
+    padding-right: 24px;
+    padding-bottom: 16px;
+}
+
+.dataTables_filter {
+    float: left;
+    padding: 21px 11px;
+}
+
+.table-responsive {
+    overflow-x: hidden !important;
+}
+.dataTables_filter input {
+    background: #f8f7fa;
+    border: unset;
+    padding: 10px 17px;
+    margin-left: 14px;
+    border-radius: 5px;
+}
+
+.dataTables_filter input:focus {
+    box-shadow: unset;
+    outline: none;
+}
+
+.dataTables_info {
+    float: left;
+    padding: 16px 21px;
+}
+
+.dataTables_paginate {
+    float: right;
+    padding: 16px 6px;
+}
+
+
+
+.dataTables_paginate span a {
+    background: #7367f0;
+    padding: 0 9px;
+    color: #fff;
+    display: inline-block;
+   
+}
+.dataTables_paginate span a {
+    background: #7367f0;
+    padding: 3px 13px;
+    color: #fff;
+    display: inline-block;
+    border-radius: 5px;
+}
+.dataTables_paginate a {
+    margin: 0 6px;
+}
